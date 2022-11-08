@@ -4,6 +4,16 @@ import can
 import time
 
 
+def heartBeatON():
+    os.system('cansend can0 620#2B.17.10.00.64.00.00.00')
+
+def saveChanges():
+    os.system('cansend can0 620#23.10.10.01.73.61.76.65')
+
+def baudRateChange():
+    os.system('cansend can0 620#2F.F2.20.00.04.00.00.00')
+    os.system('cansend can0 620#2F.F3.20.00.04.00.00.00')
+
 time.sleep(1.0)
 os.system('sudo ifconfig can0 down')
 
@@ -20,7 +30,7 @@ for i in baudRates:
         bus = can.Bus(channel='can0', interface='socketcan')
         message = bus.recv(1.0)  # Timeout in seconds. 
         if (message.arbitration_id == 1824): #(message != None) and
-            print("Baud rate found = ", i , "kbit/s")
+            print("Baud rate found = ", i/1000 , "kbit/s")
             can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')
             print("CAN device detected")
             msg = can0.recv(1.0)       
@@ -30,12 +40,20 @@ for i in baudRates:
             print(type(msg.data))
             if (msg.data == b'\x7f'):
                 print("message")
-                # os.system('sudo cansend can0 000#01.20')
-                msgData = can.Message(is_extended_id=False, arbitration_id=0x000, data=[0x05]) 
+                os.system('cansend can0 000#01.20')
+                can0 = can.interface.Bus(channel = 'can0', bustype = 'socketcan')
+                # msgData = can.Message(is_extended_id=False, arbitration_id=0x000, data=[1, 20]) 
                 # print(msgData)
-                bus.send(msgData)
+                # bus.send(msgData)
                 time.sleep(0.1)
+                msg = can0.recv(1.0) 
                 print(msg.data)
+
+                if (msg.data == b'\x05'):
+                    baudRateChange()
+                    saveChanges()
+
+                # os.system('cansend can0 000#80.20')
             print(msg.data)
             time.sleep(1.0)
             os.system('sudo ifconfig can0 down')
